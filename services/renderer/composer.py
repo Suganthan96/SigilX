@@ -42,6 +42,7 @@ def render_portrait(
         Complete SVG string, 600×600px, with embedded CSS animations.
         Character-for-character identical for the same inputs.
     """
+    wallet_address = wallet_address.lower()
     rng = _make_rng(wallet_address, chain)
 
     palette = build_palette(fv, rng)

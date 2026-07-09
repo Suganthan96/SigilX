@@ -23,9 +23,9 @@ from .payment import x402_middleware
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup / shutdown lifecycle."""
-    print("🎨 SigilX Chain Portrait — starting up")
+    print("SigilX Chain Portrait - starting up")
     yield
-    print("🎨 SigilX Chain Portrait — shutting down")
+    print("SigilX Chain Portrait - shutting down")
 
 
 app = FastAPI(

@@ -29,9 +29,17 @@ except ImportError:
     print("FastMCP not installed. Run: pip install fastmcp")
     sys.exit(1)
 
+from web3 import Web3
+
 from ..extractor.okx_client import OKXClient, SUPPORTED_CHAINS
 from ..extractor.fingerprint import build_fingerprint, MINIMUM_TX_COUNT
 from ..renderer.composer import render_portrait
+
+
+def _keccak_hex(svg: str) -> str:
+    """keccak256(svg), 0x-prefixed — matches the hash mint.py computes on-chain."""
+    raw = Web3.keccak(text=svg).hex()
+    return raw if raw.startswith("0x") else f"0x{raw}"
 
 
 # ---------------------------------------------------------------------------
@@ -111,7 +119,7 @@ async def generate_chain_portrait(
 
     # Render SVG
     svg = render_portrait(wallet_address, chain, fv)
-    svg_hash = "0x" + hashlib.keccak_256(svg.encode()).hexdigest()
+    svg_hash = _keccak_hex(svg)
 
     # Portrait ID
     portrait_id = "cp_" + hashlib.sha256(f"{wallet_address}:{chain}".encode()).hexdigest()[:16]
@@ -139,5 +147,5 @@ async def generate_chain_portrait(
 
 if __name__ == "__main__":
     port = int(os.getenv("MCP_PORT", "8001"))
-    print(f"🔧 SigilX MCP server starting on port {port}")
+    print(f"SigilX MCP server starting on port {port}")
     mcp.run(transport="sse", port=port)

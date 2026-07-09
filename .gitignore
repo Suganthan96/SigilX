@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Hardhat build output
+contracts/artifacts/
+contracts/cache/
+
+# Env files (also covered by global gitignore, kept here for clarity)
+.env
+.env.local

@@ -21,6 +21,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, field_validator
+from web3 import Web3
 
 from ..extractor.okx_client import OKXClient, SUPPORTED_CHAINS
 from ..extractor.fingerprint import build_fingerprint, MINIMUM_TX_COUNT
@@ -146,7 +147,7 @@ async def generate(req: GenerateRequest) -> GenerateResponse:
 
     # --- Render SVG ---
     svg = render_portrait(req.wallet_address, req.chain, fv)
-    svg_hash = "0x" + hashlib.keccak_256(svg.encode()).hexdigest()
+    svg_hash = _keccak_hex(svg)
 
     # --- Build metadata ---
     generated_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -294,3 +295,9 @@ def _make_portrait_id(wallet: str, chain: str) -> str:
     """Deterministic portrait ID: cp_ + first 16 chars of SHA-256(wallet:chain)."""
     raw = hashlib.sha256(f"{wallet}:{chain}".encode()).hexdigest()
     return f"cp_{raw[:16]}"
+
+
+def _keccak_hex(svg: str) -> str:
+    """keccak256(svg), 0x-prefixed — matches the hash mint.py computes on-chain."""
+    raw = Web3.keccak(text=svg).hex()
+    return raw if raw.startswith("0x") else f"0x{raw}"
