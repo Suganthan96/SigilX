@@ -1,0 +1,26 @@
+{
+  "name": "sigilx-contracts",
+  "version": "1.0.0",
+  "description": "SigilX Chain Portrait — Smart Contracts (X Layer)",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run deploy/deploy_testnet.js --network xlayer-testnet",
+    "deploy:mainnet": "hardhat run deploy/deploy_mainnet.js --network xlayer-mainnet",
+    "verify:testnet": "hardhat verify --network xlayer-testnet",
+    "verify:mainnet": "hardhat verify --network xlayer-mainnet",
+    "size": "hardhat size-contracts",
+    "clean": "hardhat clean"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "hardhat": "^2.22.0",
+    "hardhat-contract-sizer": "^2.10.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5"
+  }
+}

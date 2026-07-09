@@ -1,0 +1,11 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+fastmcp>=0.1.0
+httpx>=0.27.0
+pydantic>=2.7.0
+numpy>=1.26.0
+scipy>=1.13.0
+python-dotenv>=1.0.0
+redis>=5.0.0
+aiofiles>=23.2.0
+web3>=6.20.0
