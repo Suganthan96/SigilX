@@ -41,7 +41,7 @@ async function main() {
 
   // ── Deploy ─────────────────────────────────────────────────────────────────
   console.log("Deploying ChainPortrait...");
-  const ChainPortrait = await ethers.getContractFactory("ChainPortrait");
+  const ChainPortrait = await ethers.getContractFactory("SigilX");
   const contract = await ChainPortrait.deploy(initialOwner, mintFee);
   await contract.waitForDeployment();
 

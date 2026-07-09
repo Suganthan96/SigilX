@@ -67,7 +67,7 @@ async function main() {
 
   // ── Deploy ─────────────────────────────────────────────────────────────────
   console.log("Deploying ChainPortrait to X Layer Mainnet...");
-  const ChainPortrait = await ethers.getContractFactory("ChainPortrait");
+  const ChainPortrait = await ethers.getContractFactory("SigilX");
 
   // Estimate gas first
   const deployTxData = await ChainPortrait.getDeployTransaction(initialOwner, mintFee);

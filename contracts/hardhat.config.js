@@ -3,7 +3,13 @@ require("@nomicfoundation/hardhat-verify");
 require("hardhat-contract-sizer");
 require("dotenv").config({ path: "../.env" });
 
-const DEPLOYER_PRIVATE_KEY = process.env.XLAYER_PRIVATE_KEY || "";
+// Only treat XLAYER_PRIVATE_KEY as usable if it's a well-formed 32-byte hex key —
+// otherwise placeholder values (e.g. from .env.example) would break `compile`/`test`,
+// which don't need a real account at all.
+const _rawKey = process.env.XLAYER_PRIVATE_KEY || "";
+const DEPLOYER_PRIVATE_KEY = /^(0x)?[0-9a-fA-F]{64}$/.test(_rawKey)
+  ? (_rawKey.startsWith("0x") ? _rawKey : `0x${_rawKey}`)
+  : "";
 const XLAYER_TESTNET_RPC   = process.env.XLAYER_RPC_TESTNET || "https://testrpc.xlayer.tech/terigon";
 const XLAYER_MAINNET_RPC   = process.env.XLAYER_RPC_MAINNET || "https://rpc.xlayer.tech";
 
@@ -20,6 +26,12 @@ module.exports = {
         runs: 200,
       },
       viaIR: false,
+      // Pinned explicitly (rather than relying on solc's shifting default) so a future
+      // solc bump doesn't silently start emitting opcodes X Layer may not yet support.
+      // X Layer's Cancun (MCOPY/EIP-5656) support isn't confirmed as of this writing;
+      // shanghai is a safe, widely-supported target. @openzeppelin/contracts is pinned
+      // to 5.0.2 (predates the MCOPY-using Bytes.sol utility) to match.
+      evmVersion: "shanghai",
     },
   },
 
@@ -86,7 +98,9 @@ module.exports = {
   },
 
   paths: {
-    sources:   "./",
+    // "./src" (not "./") so Hardhat's source scan doesn't collide with
+    // ./node_modules, which lives alongside the contracts in this repo layout.
+    sources:   "./src",
     tests:     "./test",
     cache:     "./cache",
     artifacts: "./artifacts",

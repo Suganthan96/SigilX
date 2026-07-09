@@ -45,7 +45,7 @@ async function deployFixture() {
   const [owner, minter, user, other] = await ethers.getSigners();
 
   const mintFee = ethers.parseEther("0");   // free for tests
-  const ChainPortrait = await ethers.getContractFactory("ChainPortrait");
+  const ChainPortrait = await ethers.getContractFactory("SigilX");
   const contract = await ChainPortrait.deploy(owner.address, mintFee);
   await contract.waitForDeployment();
 
@@ -58,7 +58,7 @@ async function deployFixture() {
 async function deployWithFeeFixture() {
   const [owner, minter, user] = await ethers.getSigners();
   const mintFee = ethers.parseEther("0.01");
-  const ChainPortrait = await ethers.getContractFactory("ChainPortrait");
+  const ChainPortrait = await ethers.getContractFactory("SigilX");
   const contract = await ChainPortrait.deploy(owner.address, mintFee);
   await contract.waitForDeployment();
   await contract.connect(owner).setMinter(minter.address, true);
@@ -96,7 +96,7 @@ describe("ChainPortrait", function () {
   describe("Deployment", function () {
     it("should set the correct name and symbol", async function () {
       const { contract } = await loadFixture(deployFixture);
-      expect(await contract.name()).to.equal("SigilX Chain Portrait");
+      expect(await contract.name()).to.equal("SigilX");
       expect(await contract.symbol()).to.equal("SIGIL");
     });
 
