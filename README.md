@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="web/public/logo_without_bg.png" alt="SigilX logo" width="120" />
+  <img src="web/public/SigilX.png" alt="SigilX logo" width="120" />
 </p>
 
 # SigilX
@@ -92,10 +92,6 @@ portrait plus its underlying stats.
 - Deterministic feature fingerprint
 - Mint-ready metadata package
 - Public shareable page with social preview
-
-<p align="center">
-  <img src="web/public/wallet_without_bg.png" alt="SigilX minted wallet artifact" width="320" />
-</p>
 
 ---
 
