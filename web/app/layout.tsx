@@ -4,6 +4,7 @@ import {Geist, Geist_Mono} from 'next/font/google'
 import {Analytics} from '@vercel/analytics/next'
 import './globals.css'
 import Dither from "@/components/Dither";
+import CanvasErrorBoundary from "@/components/canvas-error-boundary";
 import FooterSection from "@/components/footer";
 import {HeroHeader} from "@/components/header";
 
@@ -42,17 +43,19 @@ export default function RootLayout({
         <html lang="en" className="dark">
         <body className="font-sans antialiased">
         <div className='absolute w-full h-dvh max-h-155 sm:max-h-115 md:max-h-125 lg:max-h-190 xl:max-h-195'>
-            <Dither
-                waveColor={[0.30980392156862746, 0.30980392156862746, 0.30980392156862746]}
-                disableAnimation={false}
-                enableMouseInteraction
-                mouseRadius={0.3}
-                colorNum={4}
-                pixelSize={2}
-                waveAmplitude={0.3}
-                waveFrequency={3}
-                waveSpeed={0.05}
-            />
+            <CanvasErrorBoundary fallback={<div className="w-full h-full bg-background" />}>
+                <Dither
+                    waveColor={[0.30980392156862746, 0.30980392156862746, 0.30980392156862746]}
+                    disableAnimation={false}
+                    enableMouseInteraction
+                    mouseRadius={0.3}
+                    colorNum={4}
+                    pixelSize={2}
+                    waveAmplitude={0.3}
+                    waveFrequency={3}
+                    waveSpeed={0.05}
+                />
+            </CanvasErrorBoundary>
         </div>
         <HeroHeader/>
         {children}

@@ -1,23 +1,20 @@
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { InfiniteSlider } from '@/components/ui/infinite-slider'
 import { ProgressiveBlur } from '@/components/ui/progressive-blur'
 import { TextEffect } from "@/components/motion-primitives/text-effect";
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
-import V0Icon from "@/components/icons/v0-icon";
-import VercelWordmarkIcon from "@/components/icons/vercel-wordmark-icon";
-import GlobantLogoIcon from "@/components/icons/globant-logo-icon";
 import DecryptedText from "@/components/DecryptedText";
 import { transitionVariants } from "@/lib/utils";
-import LanyardWithControls from "@/components/lanyard-with-controls";
 
 export default function HeroSection() {
     return (
         <main className="overflow-x-hidden">
-            <section className='lg:h-screen'>
+            <section className='lg:min-h-screen'>
                 <div
-                    className="pb-24 pt-12 md:pb-32 lg:pb-56 lg:pt-44 lg:grid lg:grid-cols-2 lg:grid-rows-1 grid-cols-1 grid-rows-2">
+                    className="relative pb-24 pt-12 md:pb-32 lg:pb-24 lg:pt-24 lg:grid lg:min-h-screen lg:grid-cols-2 lg:grid-rows-1 lg:items-center grid-cols-1 grid-rows-2">
                     <div className="relative mx-auto flex max-w-xl flex-col px-6 lg:block">
                         <div className="mx-auto max-w-2xl text-center lg:ml-0 lg:text-left">
                             <div className='mt-8 lg:mt-16'>
@@ -36,7 +33,7 @@ export default function HeroSection() {
                                 speedSegment={0.3}
                                 as="h1"
                                 className="max-w-2xl text-balance text-6xl font-semibold md:text-7xl xl:text-8xl">
-                                Turn a Wallet
+                                Wrap a Wallet
                             </TextEffect>
                             <TextEffect
                                 preset="fade-in-blur"
@@ -90,10 +87,16 @@ export default function HeroSection() {
                             </AnimatedGroup>
                         </div>
                     </div>
-                    <LanyardWithControls
-                        position={[0, 0, 20]}
-                        containerClassName='lg:absolute lg:top-0 lg:right-0 lg:w-1/2 relative w-full h-screen bg-radial lg:from-transparent lg:to-transparent from-muted to-background select-none'
-                        defaultName="" />
+                    <div className="pointer-events-none relative flex w-full items-center justify-center lg:h-full">
+                        <Image
+                            src="/wallet_without_bg.png"
+                            alt="SigilX wallet"
+                            width={820}
+                            height={820}
+                            priority
+                            className="w-[85%] max-w-none drop-shadow-2xl lg:w-[105%]"
+                        />
+                    </div>
                 </div>
             </section>
             <section className="bg-background pb-16 md:pb-32">
@@ -114,7 +117,7 @@ export default function HeroSection() {
 
                     <div className="flex flex-col items-center md:flex-row">
                         <div className="md:max-w-44 md:border-r md:pr-6">
-                            <p className="text-end text-sm font-mono uppercase">Supported by</p>
+                            <p className="text-end text-sm font-mono uppercase">Built with</p>
                         </div>
                         <div className="relative py-6 md:w-[calc(100%-11rem)]">
                             <InfiniteSlider
@@ -122,15 +125,16 @@ export default function HeroSection() {
                                 speed={40}
                                 gap={112}>
                                 <div className="flex items-center">
-                                    <V0Icon size={35} aria-label="v0 Logo" className='text-foreground mx-auto' />
+                                    <span className="font-mono text-lg font-semibold uppercase tracking-tight text-foreground">OKX Market API</span>
                                 </div>
                                 <div className="flex items-center">
-                                    <VercelWordmarkIcon size={20} aria-label="Vercel Logo"
-                                        className='text-foreground mx-auto' />
+                                    <span className="font-mono text-lg font-semibold uppercase tracking-tight text-foreground">X Layer</span>
                                 </div>
                                 <div className="flex items-center">
-                                    <GlobantLogoIcon size={20} aria-label="Globant Logo"
-                                        className='text-foreground mx-auto' />
+                                    <span className="font-mono text-lg font-semibold uppercase tracking-tight text-foreground">IPFS</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="font-mono text-lg font-semibold uppercase tracking-tight text-foreground">ERC-721</span>
                                 </div>
                             </InfiniteSlider>
                             <div

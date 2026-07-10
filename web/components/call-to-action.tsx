@@ -15,7 +15,7 @@ export default function CallToAction() {
                         speedSegment={0.3}
                         as="h2"
                         className="text-balance text-4xl font-semibold lg:text-5xl">
-                        Every wallet has a fingerprint
+                        Every wallet has a signature
                     </TextEffect>
                     <TextEffect
                         triggerOnView

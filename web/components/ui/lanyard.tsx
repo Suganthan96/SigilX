@@ -130,6 +130,8 @@ function Band({maxSpeed = 50, minSpeed = 0, isMobile = false, cardTextureUrl}: B
 
     const {nodes, materials} = useGLTF(cardGLB) as any;
     const texture = useTexture(typeof lanyard === 'string' ? lanyard : lanyard.src) as THREE.Texture;
+    const walletTexture = useTexture('/wallet_without_bg.png') as THREE.Texture;
+    walletTexture.colorSpace = THREE.SRGBColorSpace;
     
     // Load custom card texture if provided - use state to handle async loading
     const [customCardTexture, setCustomCardTexture] = useState<THREE.Texture | null>(null);
@@ -231,10 +233,9 @@ function Band({maxSpeed = 50, minSpeed = 0, isMobile = false, cardTextureUrl}: B
                     {...segmentProps}
                     type={dragged ? ('kinematicPosition' as RigidBodyProps['type']) : ('dynamic' as RigidBodyProps['type'])}
                 >
-                    <CuboidCollider args={[0.8, 1.125, 0.01]}/>
-                    <group
-                        scale={2.25}
-                        position={[0, -1.2, -0.05]}
+                    <CuboidCollider args={[1.2, 0.85, 0.01]}/>
+                    <mesh
+                        position={[0, -0.7, 0.05]}
                         onPointerOver={() => hover(true)}
                         onPointerOut={() => hover(false)}
                         onPointerUp={(e: any) => {
@@ -246,16 +247,20 @@ function Band({maxSpeed = 50, minSpeed = 0, isMobile = false, cardTextureUrl}: B
                             drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
                         }}
                     >
-                        <mesh geometry={nodes.card.geometry}>
-                            <meshPhysicalMaterial
-                                map={cardTextureUrl && customCardTexture ? customCardTexture : materials.base.map}
-                                map-anisotropy={16}
-                                clearcoat={isMobile ? 0 : 1}
-                                clearcoatRoughness={0.15}
-                                roughness={0.9}
-                                metalness={0.8}
-                            />
-                        </mesh>
+                        <planeGeometry args={[2.7, 1.8]}/>
+                        <meshPhysicalMaterial
+                            map={walletTexture}
+                            map-anisotropy={16}
+                            transparent
+                            alphaTest={0.02}
+                            side={THREE.DoubleSide}
+                            clearcoat={isMobile ? 0 : 1}
+                            clearcoatRoughness={0.15}
+                            roughness={0.9}
+                            metalness={0.4}
+                        />
+                    </mesh>
+                    <group scale={2.25} position={[0, -1.2, -0.05]}>
                         <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3}/>
                         <mesh geometry={nodes.clamp.geometry} material={materials.metal}/>
                     </group>

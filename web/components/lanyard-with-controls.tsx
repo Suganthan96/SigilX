@@ -67,22 +67,17 @@ export default function LanyardWithControls({
   const cardTemplateRef = useRef<CardTemplateRef>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Auto-capture texture when component mounts with a defaultName from URL
+  // Always capture the card texture on mount, even with no name entered yet —
+  // otherwise the card falls back to card.glb's own baked-in default texture
+  // instead of ever showing wallet_without_bg.png.
   useEffect(() => {
-    // If no defaultName, mark as initialized immediately
-    if (!defaultName) {
-      setIsInitialized(true);
-      return;
-    }
-    
-    // If there's a defaultName, wait for card template to render then capture
     const timer = setTimeout(async () => {
       if (cardTemplateRef.current) {
         await cardTemplateRef.current.captureTexture();
       }
       setIsInitialized(true);
     }, 150);
-    
+
     return () => clearTimeout(timer);
   }, [defaultName]);
 

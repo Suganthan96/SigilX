@@ -23,7 +23,7 @@ const CardTemplate = forwardRef<CardTemplateRef, CardTemplateProps>(
   ({ userName, variant, onTextureReady, city, date }, ref) => {
     const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null);
 
-    const imageSrc = variant === "dark" ? "/card-base-dark.png" : "/card-base-light.png";
+    const imageSrc = "/wallet_without_bg.png";
     const textColor = variant === "dark" ? "#ffffff" : "#000000";
 
     // Preload the base card image

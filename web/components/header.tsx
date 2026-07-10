@@ -1,9 +1,9 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import {Menu, X} from 'lucide-react'
 import {Button} from '@/components/ui/button'
 import React from 'react'
-import V0Icon from "@/components/icons/v0-icon";
 
 export const HeroHeader = () => {
     const [menuState, setMenuState] = React.useState(false)
@@ -19,8 +19,8 @@ export const HeroHeader = () => {
                                 href="/"
                                 aria-label="home"
                                 className="flex items-center space-x-2">
-                                <V0Icon size={30} className='text-foreground'/>
-                                <span className='font-mono'>SIGILX</span>
+                                <Image src="/SigilX.png" alt="SigilX" width={48} height={48} className='rounded-sm'/>
+                                <span className='font-mono'>SigilX</span>
                             </Link>
 
                             <button

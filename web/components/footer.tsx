@@ -1,23 +1,19 @@
 import Link from 'next/link'
-import V0Icon from "@/components/icons/v0-icon";
+import Image from 'next/image'
 import React from "react";
 
 const links = [
     {
-        title: 'Vercel',
-        href: 'https://vercel.com/',
+        title: 'X Layer',
+        href: 'https://www.oklink.com/xlayer-test',
     },
     {
-        title: 'v0',
-        href: 'https://v0.dev/',
+        title: 'OKX Market API',
+        href: 'https://www.okx.com/web3/build/docs/waas/rest-market',
     },
     {
-        title: 'Meetup SDK',
-        href: 'https://meetup-sdk.vercel.com/',
-    },
-    {
-        title: 'v0 IRL',
-        href: 'https://v0.app/irl',
+        title: 'Docs',
+        href: '#',
     },
 ]
 
@@ -28,8 +24,9 @@ export default function FooterSection() {
                 <Link
                     href="/"
                     aria-label="go home"
-                    className="mx-auto block size-fit">
-                    <V0Icon size={30} className='text-foreground'/>
+                    className="mx-auto flex size-fit items-center gap-2">
+                    <Image src="/SigilX.png" alt="SigilX" width={30} height={30} className="rounded-sm"/>
+                    <span className="font-mono text-foreground">SigilX</span>
                 </Link>
 
                 <div className="my-8 flex flex-wrap justify-center gap-6 text-sm">
@@ -42,11 +39,7 @@ export default function FooterSection() {
                         </Link>
                     ))}
                 </div>
-                <span className="text-muted-foreground block text-center text-sm font-mono">Built with v0, <Link
-                    href="https://tailark.com/"
-                    className="text-foreground underline">Tailark</Link> & <Link
-                    href="https://reactbits.dev/"
-                    className="text-foreground underline">React Bits</Link> • Powered by Vercel.</span>
+                <span className="text-muted-foreground block text-center text-sm font-mono">Chain Portraits, deterministically rendered • Powered by OKX Market API + X Layer.</span>
             </div>
         </footer>
     )
