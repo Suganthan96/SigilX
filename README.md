@@ -2,11 +2,6 @@
 
 > Turn any wallet's on-chain history into a unique, deterministic work of art.
 
-[![OKX AI Genesis Hackathon](https://img.shields.io/badge/OKX%20AI%20Genesis-Hackathon%202026-blue?style=for-the-badge)](https://okx.com)
-[![Track: Artistic Excellence](https://img.shields.io/badge/Track-Artistic%20Excellence-purple?style=for-the-badge)](#)
-[![ASP Type: A2MCP](https://img.shields.io/badge/ASP%20Type-A2MCP-orange?style=for-the-badge)](#)
-[![X Layer](https://img.shields.io/badge/Network-X%20Layer-green?style=for-the-badge)](#)
-
 ---
 
 ## What Does the Agent Service Do?
