@@ -13,7 +13,7 @@ const links = [
     },
     {
         title: 'Docs',
-        href: '#',
+        href: '/docs',
     },
 ]
 

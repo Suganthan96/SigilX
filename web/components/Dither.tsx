@@ -1,6 +1,6 @@
 'use client'
 
-import {useRef, useEffect, forwardRef} from 'react';
+import {useRef, useEffect, forwardRef, useState} from 'react';
 import {Canvas, useFrame, useThree, ThreeEvent} from '@react-three/fiber';
 import {EffectComposer, wrapEffect} from '@react-three/postprocessing';
 import {Effect} from 'postprocessing';
@@ -305,6 +305,19 @@ interface DitherProps {
     mouseRadius?: number;
 }
 
+function isWebGLAvailable(): boolean {
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+        if (!gl) return false;
+        const loseContext = (gl as WebGLRenderingContext).getExtension('WEBGL_lose_context');
+        loseContext?.loseContext();
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 export default function Dither({
                                    waveSpeed = 0.05,
                                    waveFrequency = 3,
@@ -316,12 +329,32 @@ export default function Dither({
                                    enableMouseInteraction = true,
                                    mouseRadius = 1
                                }: DitherProps) {
+    const [canRenderGL, setCanRenderGL] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        setCanRenderGL(isWebGLAvailable());
+    }, []);
+
+    if (canRenderGL === false) {
+        return <div className="w-full h-full bg-background"/>;
+    }
+
+    if (canRenderGL === null) {
+        return null;
+    }
+
     return (
         <Canvas
             className="w-full h-full relative"
             camera={{position: [0, 0, 6]}}
             dpr={1}
             gl={{antialias: true, preserveDrawingBuffer: true}}
+            onCreated={({gl}) => {
+                gl.domElement.addEventListener('webglcontextlost', (e) => {
+                    e.preventDefault();
+                    setCanRenderGL(false);
+                });
+            }}
         >
             <DitheredWaves
                 waveSpeed={waveSpeed}

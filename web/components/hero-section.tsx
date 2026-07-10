@@ -70,7 +70,7 @@ export default function HeroSection() {
                                     asChild
                                     size="lg"
                                     className="px-5 text-base">
-                                    <Link href="#link">
+                                    <Link href="/generate">
                                         <span className="text-nowrap">Generate Portrait</span>
                                     </Link>
                                 </Button>
@@ -80,7 +80,7 @@ export default function HeroSection() {
                                     size="lg"
                                     variant="ghost"
                                     className="px-5 text-base bg-black/30 backdrop-blur-sm hover:bg-black/40">
-                                    <Link href="#link">
+                                    <Link href="/docs">
                                         <span className="text-nowrap">Read the Docs</span>
                                     </Link>
                                 </Button>

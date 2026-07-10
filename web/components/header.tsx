@@ -39,7 +39,7 @@ export const HeroHeader = () => {
                                 <Button
                                     asChild
                                     size="sm">
-                                    <Link href="https://meetup-sdk.vercel.com/">
+                                    <Link href="/generate">
                                         <span>Generate a Portrait</span>
                                     </Link>
                                 </Button>

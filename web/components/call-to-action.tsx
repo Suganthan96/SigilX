@@ -44,7 +44,7 @@ export default function CallToAction() {
                         <Button
                             asChild
                             size="lg">
-                            <Link href="#">
+                            <Link href="/generate">
                                 <span>Generate Portrait</span>
                             </Link>
                         </Button>
@@ -53,7 +53,7 @@ export default function CallToAction() {
                             asChild
                             size="lg"
                             variant="outline">
-                            <Link href="#">
+                            <Link href="/docs">
                                 <span>Read the Docs</span>
                             </Link>
                         </Button>

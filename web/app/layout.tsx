@@ -42,7 +42,7 @@ export default function RootLayout({
     return (
         <html lang="en" className="dark">
         <body className="font-sans antialiased">
-        <div className='absolute w-full h-dvh max-h-155 sm:max-h-115 md:max-h-125 lg:max-h-190 xl:max-h-195'>
+        <div className='absolute -z-10 w-full h-dvh max-h-155 sm:max-h-115 md:max-h-125 lg:max-h-190 xl:max-h-195'>
             <CanvasErrorBoundary fallback={<div className="w-full h-full bg-background" />}>
                 <Dither
                     waveColor={[0.30980392156862746, 0.30980392156862746, 0.30980392156862746]}
