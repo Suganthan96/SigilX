@@ -2,7 +2,7 @@
   <img src="web/public/SigilX.png" alt="SigilX logo" width="120" />
 </p>
 
-# SigilX
+<h1 align="center">SigilX</h1>
 
 Turn any wallet's onchain behavior into a unique, shareable generative artwork.
 
