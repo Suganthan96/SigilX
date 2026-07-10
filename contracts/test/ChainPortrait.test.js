@@ -69,7 +69,7 @@ async function deployWithFeeFixture() {
 // Helper to mint one portrait
 // ---------------------------------------------------------------------------
 
-async function mintPortrait(contract, minter, { to, wallet, sourceChain, portraitId, svgHash, featureVector, txCount, value } = {}) {
+async function mintPortrait(contract, minter, { to, wallet, sourceChain, portraitId, svgHash, featureVector, txCount, svg, imageUri, metadataUri, value } = {}) {
   const _to          = to          ?? minter.address;
   const _wallet      = wallet      ?? minter.address;
   const _sourceChain = sourceChain ?? "eth-mainnet";
@@ -77,10 +77,13 @@ async function mintPortrait(contract, minter, { to, wallet, sourceChain, portrai
   const _svgHash     = svgHash     ?? makeSvgHash(SAMPLE_SVG);
   const _fv          = featureVector ?? SAMPLE_FEATURE_VECTOR;
   const _txCount     = txCount     ?? 100;
+  const _svg         = svg         ?? SAMPLE_SVG;
+  const _imageUri    = imageUri    ?? "";
+  const _metadataUri = metadataUri ?? "";
   const _value       = value       ?? 0n;
 
   return contract.connect(minter).mint(
-    _to, _wallet, _sourceChain, _portraitId, _svgHash, _fv, _txCount,
+    _to, _wallet, _sourceChain, _portraitId, _svgHash, _fv, _txCount, _svg, _imageUri, _metadataUri,
     { value: _value }
   );
 }

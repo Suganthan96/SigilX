@@ -45,6 +45,12 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
         string  featureVector;   // JSON-encoded 8D feature vector
         uint256 mintedAt;        // block.timestamp at mint
         uint256 txCount;         // number of txs analyzed
+        string  svg;             // full SVG string, embedded on-chain for tokenURI()
+        string  imageUri;        // optional IPFS gateway URL for the image
+        string  metadataUri;     // optional IPFS gateway URL for the full metadata JSON;
+                                  // returned directly by tokenURI() when set, since most
+                                  // explorers only index tokenURI() when it's a real link
+                                  // rather than an inline data URI
     }
 
     // -------------------------------------------------------------------------
@@ -92,6 +98,7 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
     error WithdrawFailed();
     error EmptyPortraitId();
     error EmptySVGHash();
+    error EmptySVG();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -128,6 +135,10 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
      * @param svgHash        keccak256 of the generated SVG string
      * @param featureVector  JSON-encoded feature vector string
      * @param txCount        Number of transactions analyzed
+     * @param svg            Full SVG string, stored on-chain and embedded in tokenURI()
+     * @param imageUri       Optional IPFS gateway URL for the SVG; pass "" if unavailable
+     * @param metadataUri    Optional IPFS gateway URL for the full metadata JSON; returned
+     *                       directly by tokenURI() when set. Pass "" if unavailable.
      *
      * @return tokenId       The newly minted token ID
      */
@@ -138,7 +149,10 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
         string  calldata portraitId,
         bytes32 svgHash,
         string  calldata featureVector,
-        uint256 txCount
+        uint256 txCount,
+        string  calldata svg,
+        string  calldata imageUri,
+        string  calldata metadataUri
     )
         external
         payable
@@ -153,6 +167,7 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
         if (wallet == address(0)) revert InvalidAddress();
         if (bytes(portraitId).length == 0) revert EmptyPortraitId();
         if (svgHash == bytes32(0)) revert EmptySVGHash();
+        if (bytes(svg).length == 0) revert EmptySVG();
 
         // ── Uniqueness ──────────────────────────────────────────────────────
         if (portraitIdToToken[portraitId] != 0) {
@@ -174,7 +189,10 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
             svgHash:       svgHash,
             featureVector: featureVector,
             mintedAt:      block.timestamp,
-            txCount:       txCount
+            txCount:       txCount,
+            svg:           svg,
+            imageUri:      imageUri,
+            metadataUri:   metadataUri
         });
 
         portraitIdToToken[portraitId] = tokenId;
@@ -187,13 +205,18 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
     // -------------------------------------------------------------------------
 
     /**
-     * @notice Returns a base64-encoded JSON metadata URI for the token.
+     * @notice Returns the token's metadata URI.
      *
-     *  Metadata schema (OpenSea-compatible):
+     *  If a pinned IPFS metadata document is available (metadataUri), that's
+     *  returned directly — most explorers/marketplaces (including OKLink) only
+     *  index tokenURI() when it resolves to a real http(s)/ipfs link, not an
+     *  inline data URI, so this is required for the image to actually render
+     *  there. Otherwise falls back to a base64-encoded JSON data URI built
+     *  entirely on-chain:
      *  {
      *    "name": "Chain Portrait #1",
      *    "description": "...",
-     *    "image": "data:image/svg+xml;base64,...",   ← placeholder; SVG served off-chain
+     *    "image": "https://gateway.pinata.cloud/ipfs/...",  ← or a data URI fallback
      *    "external_url": "https://sigilx.xyz/portrait/<id>",
      *    "attributes": [ { "trait_type": "...", "value": ... }, ... ]
      *  }
@@ -206,6 +229,10 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
     {
         _requireOwned(tokenId);
         Portrait memory p = portraits[tokenId];
+
+        if (bytes(p.metadataUri).length > 0) {
+            return p.metadataUri;
+        }
 
         string memory name = string.concat("SigilX #", tokenId.toString());
         string memory description = string.concat(
@@ -222,13 +249,20 @@ contract SigilX is ERC721URIStorage, Ownable, ReentrancyGuard {
             p.portraitId
         );
 
+        // Prefer the pinned IPFS gateway URL (renders in explorers/marketplaces
+        // that don't parse inline data URIs, e.g. OKLink); fall back to the
+        // on-chain SVG if it's unset.
+        string memory image = bytes(p.imageUri).length > 0
+            ? p.imageUri
+            : string.concat("data:image/svg+xml;base64,", Base64.encode(bytes(p.svg)));
+
         string memory attributes = _buildAttributes(p);
 
         string memory json = string.concat(
             '{"name":"', name, '",'
             '"description":"', description, '",'
             '"external_url":"', externalUrl, '",'
-            '"image":"https://sigilx.xyz/og/', p.portraitId, '.png",'
+            '"image":"', image, '",'
             '"attributes":', attributes, '}'
         );
 

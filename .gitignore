@@ -4,6 +4,9 @@ __pycache__/
 .pytest_cache/
 .venv/
 
+# Node
+node_modules/
+
 # Hardhat build output
 contracts/artifacts/
 contracts/cache/
@@ -11,3 +14,6 @@ contracts/cache/
 # Env files (also covered by global gitignore, kept here for clarity)
 .env
 .env.local
+
+# OS
+.DS_Store

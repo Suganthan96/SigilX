@@ -25,7 +25,9 @@ module.exports = {
         enabled: true,
         runs: 200,
       },
-      viaIR: false,
+      // Required once mint() carries the extra `svg` calldata param (Portrait.svg
+      // on-chain storage) — otherwise solc hits "stack too deep".
+      viaIR: true,
       // Pinned explicitly (rather than relying on solc's shifting default) so a future
       // solc bump doesn't silently start emitting opcodes X Layer may not yet support.
       // X Layer's Cancun (MCOPY/EIP-5656) support isn't confirmed as of this writing;

@@ -3,18 +3,17 @@ import type {Metadata} from 'next'
 import {Geist, Geist_Mono} from 'next/font/google'
 import {Analytics} from '@vercel/analytics/next'
 import './globals.css'
+import Dither from "@/components/Dither";
 import FooterSection from "@/components/footer";
 import {HeroHeader} from "@/components/header";
 
 const _geist = Geist({subsets: ["latin"]});
 const _geistMono = Geist_Mono({subsets: ["latin"]});
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
 export const metadata: Metadata = {
-    metadataBase: new URL(SITE_URL),
     title: 'SigilX — Chain Portrait',
-    description: "Turn any wallet's on-chain transaction history into a unique, deterministic generative artwork.",
+    description: 'Turn any wallet\'s on-chain history into a unique, deterministic work of art. Same wallet, same art, every time — powered by OKX Market API and X Layer.',
+    generator: 'v0.app',
     icons: {
         icon: [
             {
@@ -42,8 +41,21 @@ export default function RootLayout({
     return (
         <html lang="en" className="dark">
         <body className="font-sans antialiased">
+        <div className='absolute w-full h-dvh max-h-155 sm:max-h-115 md:max-h-125 lg:max-h-190 xl:max-h-195'>
+            <Dither
+                waveColor={[0.30980392156862746, 0.30980392156862746, 0.30980392156862746]}
+                disableAnimation={false}
+                enableMouseInteraction
+                mouseRadius={0.3}
+                colorNum={4}
+                pixelSize={2}
+                waveAmplitude={0.3}
+                waveFrequency={3}
+                waveSpeed={0.05}
+            />
+        </div>
         <HeroHeader/>
-        <div className="pt-16">{children}</div>
+        {children}
         <FooterSection/>
         <Analytics/>
         </body>
