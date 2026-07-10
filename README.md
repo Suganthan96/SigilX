@@ -1,6 +1,6 @@
-# 🎨 SigilX — Chain Portrait
+# SigilX — Chain Portrait
 
-> **Turn any wallet's on-chain history into a unique, deterministic work of art.**
+> Turn any wallet's on-chain history into a unique, deterministic work of art.
 
 [![OKX AI Genesis Hackathon](https://img.shields.io/badge/OKX%20AI%20Genesis-Hackathon%202026-blue?style=for-the-badge)](https://okx.com)
 [![Track: Artistic Excellence](https://img.shields.io/badge/Track-Artistic%20Excellence-purple?style=for-the-badge)](#)
@@ -9,200 +9,258 @@
 
 ---
 
-## ✨ What Is SigilX?
+## What Does the Agent Service Do?
 
-**SigilX** is an on-chain identity art engine. Submit any EVM wallet address; SigilX pulls its full transaction history from the **OKX Market API**, runs chaos-math / entropy analysis on the behavioral fingerprint embedded in that history, and maps that fingerprint deterministically to a generative SVG artwork — your personal *Chain Portrait*.
+SigilX is registered on OKX.AI as an Agent Service Provider (ASP) — a paid, agent-callable
+service that any AI agent (or human, over the same REST API) can invoke. In one call, it does
+three things:
 
-No two wallets produce the same portrait. Same wallet always produces the same portrait. The algorithm is the art.
+1. **Analyzes.** Given an EVM wallet address, it pulls that wallet's transaction history from
+   the OKX Market API and runs it through entropy/chaos math (Sample Entropy, Correlation
+   Dimension, Burstiness, and related measures) to extract an 8-dimension behavioral
+   fingerprint — a numeric summary of *how* that wallet behaves on-chain (bursty vs. steady,
+   diverse vs. repetitive, high-variance vs. consistent, and so on).
+2. **Renders.** That fingerprint is mapped, deterministically, to a generative SVG artwork —
+   a Chain Portrait. There is no image-generation model involved; the art is pure math. The
+   same wallet on the same chain always produces the exact same portrait, byte for byte.
+3. **Mints (optional).** The caller can then mint the portrait as an ERC-721 NFT on X Layer,
+   with the feature vector and a hash of the SVG stored on-chain for verifiability.
+
+The service is callable two ways:
+
+- **As a plain REST API**, gated behind an x402 payment (pay-per-call, settled on-chain).
+- **As an MCP tool** (`generate_chain_portrait`), so an agent framework such as Claude can call
+  it directly as a tool rather than writing HTTP client code.
+
+Nothing about the analysis or rendering depends on which path is used — both call the same
+underlying pipeline.
 
 ```
-Wallet Address → OKX Tx History API → Entropy Analysis → Generative Renderer → NFT on X Layer
+Wallet address -> OKX transaction history -> entropy/chaos analysis -> SVG renderer -> optional mint on X Layer
 ```
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌──────────────┐   ┌──────────────────────┐   ┌───────────────────────────┐
-│ Wallet Addr  │──▶│ OKX Market API        │──▶│ Feature Extraction        │
-│ (input)      │   │ (Tx History +         │   │ (Sample Entropy, Corr.    │
-└──────────────┘   │  Address Analysis)    │   │  Dimension, Lyapunov)     │
-                   └──────────────────────┘   └────────────┬──────────────┘
-                                                            │
-                                                            ▼
-┌─────────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐
-│ Shareable Page       │◀─│ Mint on X Layer   │◀─│ Generative SVG Renderer  │
-│ (OG tags, captions)  │  │ (ERC-721 + meta)  │  │ (palette, shapes, motion)│
-└─────────────────────┘  └──────────────────┘  └──────────────────────────┘
++--------------+   +-----------------------+   +----------------------------+
+| Wallet addr  |-->| OKX Market API        |-->| Feature extraction         |
+| (input)      |   | (tx history +         |   | (Sample Entropy, corr.     |
++--------------+   |  address analysis)    |   |  dimension, burstiness)    |
+                   +-----------------------+   +-------------+--------------+
+                                                              |
+                                                              v
++----------------------+   +-------------------+   +----------------------------+
+| Shareable page       |<--| Mint on X Layer   |<--| Generative SVG renderer    |
+| (OG tags, radar      |   | (ERC-721 + on-    |   | (palette, shapes, motion,  |
+|  chart, mint button) |   |  chain metadata)  |   |  deterministic seeding)    |
++----------------------+   +-------------------+   +----------------------------+
 
-FastAPI ──▶ FastMCP ──▶ HTTPS ──▶ x402 payment gate ──▶ OKX.AI A2MCP listing
+FastAPI --> FastMCP --> HTTPS --> x402 payment gate --> OKX.AI ASP listing
 ```
 
 ### OKX Infrastructure Mapping
 
-| Need | OKX Component |
+| Need | OKX component |
 |---|---|
-| Wallet transaction history | Market API → Transaction History API |
-| Behavioral signals | Market API → Address Analysis API |
+| Wallet transaction history | Market API -> Transaction History API |
+| Behavioral signals | Market API -> Address Analysis API |
 | ASP identity + wallet | Onchain OS Agentic Wallet |
-| NFT minting | X Layer (testnet ID `1952` → mainnet ID `196`) |
+| NFT minting | X Layer (testnet ID `1952`, mainnet ID `196`) |
 | Per-generation billing | Onchain OS Payment SDK / x402 |
-| Agent-callable interface | Onchain OS Skills + FastMCP |
+| Agent-callable interface | Onchain OS Skills + FastMCP (A2MCP) |
 
 ---
 
-## 🗂️ Repository Structure
+## Repository Structure
 
 ```
 SigilX/
 ├── README.md
-├── PRD.md                      ← Full Product Requirements Document
-├── ARCHITECTURE.md             ← Detailed system design
-├── docs/
-│   ├── api-reference.md
-│   ├── entropy-math.md
-│   └── art-algorithm.md
+├── PRD.md                            Product requirements
+├── ARCHITECTURE.md                   Detailed system design
+├── STATUS.md                         Build status / open items
 ├── services/
-│   ├── extractor/              ← Entropy/chaos analysis engine
-│   │   ├── okx_client.py       ← OKX Market API wrapper
-│   │   ├── entropy.py          ← Sample Entropy, Correlation Dimension
-│   │   └── fingerprint.py      ← Feature vector builder
-│   ├── renderer/               ← Generative SVG renderer
+│   ├── extractor/                    Entropy/chaos analysis engine
+│   │   ├── okx_client.py             OKX Market API wrapper
+│   │   ├── entropy.py                Sample Entropy, Correlation Dimension, Burstiness
+│   │   └── fingerprint.py            8D feature vector builder
+│   ├── renderer/                     Generative art renderer
 │   │   ├── palette.py
 │   │   ├── shapes.py
-│   │   ├── composer.py
-│   │   └── animator.py
+│   │   ├── composer.py               SVG composition
+│   │   ├── animator.py               CSS animation layer
+│   │   └── attractor.py              Chaotic-attractor raster renderer
 │   └── api/
-│       ├── main.py             ← FastAPI entry point
-│       ├── routes.py           ← /generate, /status, /metadata
-│       ├── payment.py          ← x402 middleware
-│       └── mcp_server.py       ← FastMCP wrapper
+│       ├── main.py                   FastAPI entry point
+│       ├── routes.py                 /generate, /mint, /portrait, /chains, /health
+│       ├── payment.py                x402 payment middleware
+│       ├── mint.py                   On-chain minting logic
+│       ├── ipfs.py                   IPFS pinning (Pinata) for image/metadata
+│       └── mcp_server.py             FastMCP wrapper — agent-callable tool
 ├── contracts/
-│   ├── ChainPortrait.sol       ← ERC-721 minting contract
+│   ├── src/SigilX.sol                ERC-721 minting contract
 │   ├── deploy/
 │   │   ├── deploy_testnet.js
 │   │   └── deploy_mainnet.js
-│   └── hardhat.config.js
-├── frontend/
-│   ├── index.html              ← Share page with OG tags
-│   ├── style.css
-│   └── app.js
-├── tests/
-│   ├── test_extractor.py
-│   ├── test_renderer.py
-│   └── test_api.py
-├── scripts/
-│   ├── register_asp.sh
-│   └── list_marketplace.sh
+│   └── test/ChainPortrait.test.js
+├── web/                              Next.js frontend
+│   ├── app/
+│   │   ├── generate/                 Wallet input -> generate -> mint flow
+│   │   ├── docs/                     This service's own docs page
+│   │   └── portrait/[id]/            Shareable portrait page (OG tags)
+│   └── components/
+├── tests/                            Python test suite (pytest)
 ├── .env.example
-├── requirements.txt
-└── docker-compose.yml
+└── requirements.txt
 ```
 
 ---
 
-## 🚀 Build Phases
+## The Behavioral Fingerprint
 
-### Phase 1 — Feature Extraction Engine
-Pull tx history from OKX Market API, run entropy/chaos math, output a normalized 8-dimension feature vector.
+Each wallet is reduced to eight normalized dimensions in `[0, 1]`, which drive both the
+analysis and the art:
 
 | Dimension | What it captures |
 |---|---|
-| `activity_entropy` | Randomness of tx frequency over time |
+| `activity_entropy` | Randomness of transaction frequency over time |
 | `timing_regularity` | How periodic/rhythmic the wallet's activity is |
-| `amount_variance` | Spread of tx values (HODLer vs. trader) |
-| `interaction_diversity` | Unique contract / counterparty count |
-| `burst_coefficient` | Clustering of activity in time bursts |
+| `amount_variance` | Spread of transaction values (HODLer vs. active trader) |
+| `interaction_diversity` | Unique contract/counterparty count |
+| `burst_coefficient` | Clustering of activity into time bursts |
 | `recency_decay` | How recently the wallet has been active |
-| `volume_skew` | Heavy tails in tx size distribution |
-| `chaos_dimension` | Correlation dimension proxy (fractal complexity) |
+| `volume_skew` | Heavy tails in the transaction-size distribution |
+| `chaos_dimension` | Correlation-dimension proxy (fractal complexity) |
 
-### Phase 2 — Generative Renderer
-Deterministic mapping: feature vector → SVG visual parameters.
-
-```
-activity_entropy      → color palette (warm/chaotic vs cool/ordered)
-timing_regularity     → symmetry level (asymmetric vs crystalline)
-amount_variance       → shape complexity (organic curves vs geometric)
-interaction_diversity → element density (sparse vs dense)
-burst_coefficient     → cluster pattern (scattered vs grouped)
-recency_decay         → opacity / fade effects
-volume_skew           → scale contrast (large/small element ratio)
-chaos_dimension       → recursion depth / fractal iterations
-```
-
-Output: deterministic SVG (600×600 px) with CSS animation layer.
-
-### Phase 3 — FastAPI Service
-
-```http
-POST /generate
-Content-Type: application/json
-{"wallet_address": "0xabc...", "chain": "eth-mainnet"}
-
-→ 200 OK
-{
-  "portrait_id": "cp_abc123",
-  "svg": "<svg>...</svg>",
-  "features": { ... },
-  "metadata": { "title": "Chain Portrait #4921", ... }
-}
-```
-
-### Phase 4 — FastMCP Wrapper
-Expose `/generate` as an MCP tool. ~1 day effort per OKX docs.
-
-### Phase 5 — Deploy + HTTPS
-Recommended: **Hong Kong node** (best latency for OKX, no ICP filing required).
-
-### Phase 6 — x402 Payment Gate
-`payment.py` middleware: unpaid POST → HTTP 402 intercept. Paid → generate. Settlement instant via OKX Payment SDK.
-
-### Phase 7 — Minting Contract (X Layer)
-`ChainPortrait.sol` — ERC-721 storing:
-- `portraitId` — deterministic hash of wallet + chain
-- `featureVector` — JSON-encoded, on-chain
-- `svgHash` — keccak256 of SVG for verifiability
-- `wallet` — analyzed wallet address
-
-**Testnet:** Chain ID `1952`, RPC `https://testrpc.xlayer.tech/terigon`
-**Mainnet:** Chain ID `196`, RPC `https://rpc.xlayer.tech`
-
-### Phase 8 — Shareable Page
-Static frontend:
-- Renders SVG portrait inline
-- Shows feature vector breakdown
-- Open Graph meta tags for rich X/Twitter card previews
-- Pre-filled share caption: *"My wallet's on-chain history is literally art 🎨 #ChainPortrait #OKXAI"*
-
-### Phase 9 — Register as A2MCP on OKX.AI
-
-```bash
-> Help me register an A2MCP ASP on OKX.AI using Onchain OS
-# Provide: service name, description, price per call, endpoint URL
-```
-
-### Phase 10 — List on Marketplace
-
-```bash
-> Help me list my ASP on OKX.AI using Onchain OS
-# Review: up to 2 business days — list EARLY, not near the deadline
-```
-
-### Phase 11 — Go Live
-A2MCP is fully automatic once listed. Every call bills instantly.
+The renderer maps these deterministically to visual parameters — palette, symmetry, shape
+complexity, element density, cluster pattern, opacity, scale contrast, and iteration depth —
+so that the resulting portrait is a direct, reproducible visualization of the fingerprint, not
+a random or model-generated image.
 
 ---
 
-## 🔧 Local Development
+## REST API
+
+Run the service locally:
+
+```bash
+pip install -r requirements.txt
+uvicorn services.api.main:app --reload --port 8000
+```
+
+Endpoints:
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/generate` | Analyze a wallet and render its Chain Portrait. Gated by x402. |
+| POST | `/mint` | Mint a previously generated portrait as an ERC-721 on X Layer. |
+| GET | `/portrait/{id}` | Fetch a cached portrait. No payment required. |
+| GET | `/mint/{id}/status` | Check whether a portrait has been minted. |
+| GET | `/chains` | List supported chains. |
+| GET | `/health` | Service health check. |
+
+Example call:
+
+```bash
+curl -X POST http://localhost:8000/generate \
+  -H "Content-Type: application/json" \
+  -d '{"wallet_address":"0x742d35Cc6634C0532925a3b844Bc454e4438f44e","chain":"eth-mainnet"}'
+```
+
+Response:
+
+```json
+{
+  "portrait_id": "cp_abc123",
+  "svg": "<svg>...</svg>",
+  "features": { "activity_entropy": 0.62, "chaos_dimension": 0.31, "...": "..." },
+  "metadata": { "title": "Chain Portrait · 0x742d…f44e", "tx_count": 184, "svg_hash": "0x..." }
+}
+```
+
+---
+
+## MCP / Agent Integration
+
+The same pipeline is also exposed as an MCP tool (`services/api/mcp_server.py`, built on
+FastMCP), so an agent doesn't need to write any HTTP client code:
+
+```bash
+# Start the MCP server (SSE transport, default port 8001)
+python -m services.api.mcp_server
+```
+
+Tool signature:
+
+```
+generate_chain_portrait(wallet_address: str, chain: str = "eth-mainnet") -> {
+  portrait_id: str
+  svg: str
+  features: dict[str, float]   # the 8-dimension behavioral fingerprint
+  metadata: dict
+}
+```
+
+To add it to Claude Code as a remote MCP server:
+
+```bash
+claude mcp add sigilx --transport sse http://localhost:8001/sse
+```
+
+Once added, an agent can call `generate_chain_portrait` directly like any other MCP tool. For
+stdio-only MCP clients (e.g. Claude Desktop), bridge the SSE endpoint with `mcp-remote` in the
+client's server configuration.
+
+---
+
+## x402 Payments
+
+`POST /generate` is gated behind [x402](https://github.com/coinbase/x402), the protocol OKX's
+Onchain OS Payment SDK is built on:
+
+- An unpaid request gets back HTTP 402 with a body listing payment requirements
+  (`x402Version` + `accepts[]`).
+- A paid retry carries an `X-PAYMENT` header — a base64-encoded, EIP-712-signed EIP-3009
+  `transferWithAuthorization` payload — which OKX's facilitator (the "Broker") verifies and
+  settles on-chain.
+
+For local development and reviewer/judge testing, set `DEMO_MODE=true` and `DEMO_API_KEY` in
+`.env`, then pass a matching `X-Demo-Key` header to bypass the payment gate entirely:
+
+```bash
+curl -X POST http://localhost:8000/generate \
+  -H "Content-Type: application/json" \
+  -H "X-Demo-Key: $DEMO_API_KEY" \
+  -d '{"wallet_address":"0x742d35Cc6634C0532925a3b844Bc454e4438f44e","chain":"eth-mainnet"}'
+```
+
+---
+
+## Smart Contract
+
+`contracts/src/SigilX.sol` — an ERC-721 that stores, per token:
+
+- `portraitId` — deterministic hash of wallet + chain
+- `featureVector` — the 8-dimension fingerprint, on-chain
+- `svgHash` — keccak256 of the SVG, for verifiability
+- `wallet` — the analyzed wallet address
+- `imageUri` / `metadataUri` — IPFS links, when pinned, so explorers and marketplaces that
+  don't render inline data URIs can still display the image
+
+Testnet: chain ID `1952`, RPC `https://testrpc.xlayer.tech/terigon`.
+Mainnet: chain ID `196`, RPC `https://rpc.xlayer.tech`.
+
+---
+
+## Local Development
 
 ### Prerequisites
 
 ```bash
 python --version    # 3.11+
 node --version      # 18+
-npx skills add okx/onchainos-skills --yes -g
 ```
 
 ### Environment
@@ -213,7 +271,7 @@ cp .env.example .env
 # XLAYER_RPC_URL, XLAYER_PRIVATE_KEY, PAYMENT_WALLET
 ```
 
-### Run Services
+### Run services
 
 ```bash
 # API service
@@ -221,50 +279,26 @@ pip install -r requirements.txt
 uvicorn services.api.main:app --reload --port 8000
 
 # MCP server (separate terminal)
-python services/api/mcp_server.py
+python -m services.api.mcp_server
 
 # Contracts — testnet deploy
 cd contracts && npm install
 npx hardhat run deploy/deploy_testnet.js --network xlayer-testnet
 
-# Frontend (static)
-cd frontend && python -m http.server 3000
+# Frontend (Next.js)
+cd web && pnpm install && pnpm dev
 ```
 
 ### Test
 
 ```bash
-curl -X POST http://localhost:8000/generate \
-  -H "Content-Type: application/json" \
-  -d '{"wallet_address":"0x742d35Cc6634C0532925a3b844Bc454e4438f44e","chain":"eth-mainnet"}'
+pytest                          # Python: extractor, renderer, API, payment middleware
+cd contracts && npx hardhat test  # Solidity: contract behavior
 ```
 
 ---
 
-## 🎬 Demo Script (90 seconds)
-
-| Time | Action |
-|---|---|
-| 0–10s | Paste high-frequency trading wallet → chaotic/dense portrait |
-| 10–25s | Paste HODLer wallet → calm/structured portrait, clearly different |
-| 25–50s | Walk through feature panel — explain each dimension |
-| 50–70s | Mint one → show X Layer txn → open shareable link |
-| 70–80s | Paste link to X → show rich OG preview auto-populate |
-| 80–90s | Close line |
-
-> *"Every wallet has a fingerprint. SigilX turns it into art — powered end-to-end by OKX's Market API, Agentic Wallet, X Layer, and the OKX Payment SDK."*
-
----
-
-## 📋 Submission Checklist
-
-- [ ] ASP live and **passing OKX.AI review** (approved + callable)
-- [ ] X post with `#OKXAI` + ≤90s demo video
-- [ ] Google form submitted **before Jul 17, 23:59 UTC**
-
----
-
-## 🔗 Key References
+## References
 
 | Resource | URL |
 |---|---|
@@ -279,14 +313,14 @@ curl -X POST http://localhost:8000/generate \
 
 ---
 
-## 🏆 Track Alignment
+## Track Alignment
 
 | Track | Qualification |
 |---|---|
-| **Artistic Excellence** (primary) | Pure math → art; no wrapped third-party image model |
-| **Social Buzz** (secondary) | Every mint → shareable OG-tagged link built for viral spread |
-| **Revenue Rocket** (secondary) | Shares → new users → paid mints → organic loop |
+| Artistic Excellence (primary) | Pure math to art; no wrapped third-party image model |
+| Social Buzz (secondary) | Every mint produces a shareable, OG-tagged link |
+| Revenue Rocket (secondary) | Shares drive new users, new users drive paid mints |
 
 ---
 
-*MIT © 2026 SigilX / Suganthan96 — Built for the OKX AI Genesis Hackathon 2026.*
+*MIT © 2026 SigilX / Suganthan96 — built for the OKX AI Genesis Hackathon 2026.*
