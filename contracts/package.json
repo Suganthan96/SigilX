@@ -8,6 +8,7 @@
     "test": "hardhat test",
     "deploy:testnet": "hardhat run deploy/deploy_testnet.js --network xlayer-testnet",
     "deploy:mainnet": "hardhat run deploy/deploy_mainnet.js --network xlayer-mainnet",
+    "deploy:payment-token:testnet": "hardhat run deploy/deploy_payment_token_testnet.js --network xlayer-testnet",
     "verify:testnet": "hardhat verify --network xlayer-testnet",
     "verify:mainnet": "hardhat verify --network xlayer-mainnet",
     "size": "hardhat size-contracts",

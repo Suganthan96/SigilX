@@ -28,7 +28,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setattr(payment, "DEMO_MODE", False)
     monkeypatch.setattr(payment, "PAYMENT_WALLET", "0x00000000000000000000000000000000000abc")
     monkeypatch.setattr(payment, "SERVICE_PRICE_OKB", "0.1")
-    monkeypatch.setattr(payment, "X402_FACILITATOR_URL", "")
+    monkeypatch.setattr(payment, "X402_ASSET", "")
     return TestClient(app)
 
 

@@ -10,16 +10,13 @@ which OKX's Onchain OS Payment SDK is explicitly built on):
     (`x402Version` + `accepts[]`), not an ad-hoc shape.
   - Paid retries carry an `X-PAYMENT` header: base64 JSON containing an EIP-3009
     `transferWithAuthorization` payload signed via EIP-712.
-  - Verification/settlement of that signed authorization is done by a facilitator
-    (OKX calls theirs the "Broker") — sellers don't submit transactions themselves.
-
-What's still open: the actual call to OKX's Broker (its endpoint, auth, and exact
-request/response shape) is only documented through their interactive
-`npx skills add okx/onchainos-skills` installer, not the public docs, so it isn't
-implemented here. `_facilitator_verify_and_settle` is the single integration point —
-wire the real Broker call in there once that's available. Until `X402_FACILITATOR_URL`
-is set, this module does structural/expiry/amount validation only and logs a warning
-instead of settling on-chain, so local dev and DEMO_MODE keep working.
+  - Verification/settlement of that signed authorization is a "facilitator" role.
+    OKX offers a hosted one (the "Broker"), but its endpoint/auth were only ever
+    documented through an interactive installer this project didn't have access
+    to. Since EIP-712 signature recovery and ERC-3009 settlement are both public,
+    standard mechanisms (not OKX-specific), SigilX runs this role itself — see
+    `facilitator.py` — using its own wallet as the relayer that submits (and
+    pays gas for) the settlement transaction.
 
 Reference: https://web3.okx.com/onchainos/dev-docs/payments/service-seller
 """
@@ -33,9 +30,10 @@ import os
 import time
 from typing import Any, Callable
 
-import httpx
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
+
+from . import facilitator
 
 logger = logging.getLogger("sigilx.payment")
 
@@ -45,9 +43,8 @@ PAYMENT_WALLET = os.getenv("PAYMENT_WALLET", "")
 SERVICE_PRICE_OKB = os.getenv("SERVICE_PRICE_OKB", "0.1")
 
 X402_VERSION = 1
-X402_NETWORK = os.getenv("X402_NETWORK", "eip155:196")  # X Layer mainnet
-X402_ASSET = os.getenv("X402_ASSET", "")  # ERC-20/3009-compatible payment token address
-X402_FACILITATOR_URL = os.getenv("X402_FACILITATOR_URL", "")  # OKX Broker endpoint, once known
+X402_NETWORK = os.getenv("X402_NETWORK", "eip155:1952")  # X Layer testnet
+X402_ASSET = os.getenv("X402_ASSET", "")  # PaymentToken address (contracts/src/PaymentToken.sol)
 X402_MAX_TIMEOUT_SECONDS = 300
 
 
@@ -167,37 +164,25 @@ def _parse_and_validate_payment(header_value: str) -> tuple[bool, str, dict[str,
 
 
 # ---------------------------------------------------------------------------
-# Facilitator (OKX "Broker") integration point
+# Facilitator integration point (self-hosted — see facilitator.py)
 # ---------------------------------------------------------------------------
 
 async def _facilitator_verify_and_settle(payload: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
     """
-    Hand the signed authorization to the facilitator for signature verification
-    and on-chain settlement.
-
-    TODO: point this at OKX's Broker once its endpoint/auth are known (via the
-    `onchainos-skills` installer referenced in README.md). Expected shape, per
-    the x402 facilitator pattern: POST {url}/verify then POST {url}/settle with
-    this envelope, returning a settlement receipt (tx hash, payer, amount).
+    Verify the payer's signature and submit the real on-chain settlement.
+    Delegates to `facilitator.verify_and_settle`, SigilX's own self-hosted
+    facilitator (see that module's docstring for why it's self-hosted rather
+    than calling OKX's Broker).
     """
-    if not X402_FACILITATOR_URL:
+    if not X402_ASSET:
         logger.warning(
-            "X402_FACILITATOR_URL not set — skipping on-chain settlement. "
-            "Payment passed structural validation only; wire in the real OKX "
-            "Broker call before accepting this in production."
+            "X402_ASSET not set — skipping on-chain settlement. Payment passed "
+            "structural validation only; set X402_ASSET (a deployed PaymentToken "
+            "address) to enable real settlement."
         )
-        return True, {"settled": False, "reason": "no_facilitator_configured"}
+        return True, {"settled": False, "reason": "no_payment_asset_configured"}
 
-    async with httpx.AsyncClient(base_url=X402_FACILITATOR_URL, timeout=15.0) as client:
-        verify_resp = await client.post("/verify", json=payload)
-        if verify_resp.status_code != 200 or not verify_resp.json().get("isValid"):
-            return False, {"settled": False, "reason": "facilitator_rejected"}
-
-        settle_resp = await client.post("/settle", json=payload)
-        if settle_resp.status_code != 200:
-            return False, {"settled": False, "reason": "facilitator_settlement_failed"}
-
-        return True, settle_resp.json()
+    return await facilitator.verify_and_settle(payload)
 
 
 # ---------------------------------------------------------------------------
