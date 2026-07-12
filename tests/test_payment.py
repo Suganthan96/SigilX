@@ -27,7 +27,8 @@ OKX_ADDR_SUMMARY_RE = r".*/api/v5/explorer/address/address-summary.*"
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setattr(payment, "DEMO_MODE", False)
     monkeypatch.setattr(payment, "PAYMENT_WALLET", "0x00000000000000000000000000000000000abc")
-    monkeypatch.setattr(payment, "SERVICE_PRICE_OKB", "0.1")
+    monkeypatch.setattr(payment, "SERVICE_PRICE", "0.1")
+    monkeypatch.setattr(payment, "X402_ASSET_DECIMALS", 18)
     monkeypatch.setattr(payment, "X402_ASSET", "")
     return TestClient(app)
 
@@ -39,7 +40,7 @@ def _encode(envelope: dict) -> str:
 def _valid_authorization(**overrides) -> dict:
     now = int(time.time())
     base = {
-        "x402Version": 1,
+        "x402Version": 2,
         "scheme": "exact",
         "network": "eip155:196",
         "payload": {
@@ -47,7 +48,7 @@ def _valid_authorization(**overrides) -> dict:
             "authorization": {
                 "from": "0x1111111111111111111111111111111111aaaa",
                 "to": "0x00000000000000000000000000000000000abc",
-                "value": str(10**18),  # 1 OKB, well above the 0.1 OKB requirement
+                "value": str(10**18),  # well above the 0.1 requirement (18 decimals)
                 "validAfter": str(now - 10),
                 "validBefore": str(now + 300),
                 "nonce": "0x01",
@@ -67,9 +68,11 @@ def test_generate_without_payment_header_returns_x402_shape(client: TestClient):
     resp = client.post("/generate", json={"wallet_address": "0x" + "1" * 40, "chain": "eth-mainnet"})
     assert resp.status_code == 402
     body = resp.json()
-    assert body["x402Version"] == 1
+    assert body["x402Version"] == 2
+    assert body["resource"]["mimeType"] == "application/json"
     assert body["accepts"][0]["scheme"] == "exact"
     assert body["accepts"][0]["payTo"] == "0x00000000000000000000000000000000000abc"
+    assert body["accepts"][0]["amount"] == str(10**17)  # 0.1 at 18 decimals
 
 
 def test_generate_with_malformed_payment_header_returns_402(client: TestClient):
@@ -156,5 +159,42 @@ def test_demo_mode_bypass_skips_payment_check(client: TestClient, monkeypatch: p
         "/generate",
         json={"wallet_address": "0x" + "1" * 40, "chain": "eth-mainnet"},
         headers={"X-Demo-Key": "test-demo-key"},
+    )
+    assert resp.status_code == 200
+
+
+@respx.mock
+def test_zero_price_free_tier_bypasses_payment_check(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    # Mirrors OKX's ASP registration option to list a service at price 0
+    # during marketplace review — no X-PAYMENT header should be required at all.
+    monkeypatch.setattr(payment, "SERVICE_PRICE", "0")
+
+    records = [
+        {
+            "chainIndex": "1",
+            "txHash": f"0xhash{i}",
+            "methodId": "0x",
+            "nonce": str(i),
+            "txTime": str(1_700_000_000_000 + i * 3_600_000),
+            "from": [{"address": f"0xsender{i:034d}", "amount": ""}],
+            "to": [{"address": f"0xreceiver{i:032d}", "amount": ""}],
+            "tokenAddress": "",
+            "amount": str(0.1 * (i + 1)),
+            "symbol": "ETH",
+            "txFee": "21000",
+            "txStatus": "success",
+        }
+        for i in range(12)
+    ]
+    respx.get(url__regex=OKX_TX_LIST_RE).mock(
+        return_value=httpx.Response(
+            200, json={"code": "0", "data": [{"cursor": "", "transactionList": records}]}
+        )
+    )
+    respx.get(url__regex=OKX_ADDR_SUMMARY_RE).mock(return_value=httpx.Response(200, json={"code": "1"}))
+
+    resp = client.post(
+        "/generate",
+        json={"wallet_address": "0x" + "1" * 40, "chain": "eth-mainnet"},
     )
     assert resp.status_code == 200

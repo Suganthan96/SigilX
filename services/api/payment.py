@@ -40,9 +40,17 @@ logger = logging.getLogger("sigilx.payment")
 DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 DEMO_API_KEY = os.getenv("DEMO_API_KEY", "")
 PAYMENT_WALLET = os.getenv("PAYMENT_WALLET", "")
-SERVICE_PRICE_OKB = os.getenv("SERVICE_PRICE_OKB", "0.1")
 
-X402_VERSION = 1
+# Human-readable price in whichever asset X402_ASSET points at (e.g. "0.10" for
+# 10 cents of a 6-decimal stablecoin). "0" lists the service free — OKX's ASP
+# registration explicitly supports a 0 price during marketplace review, and a
+# 0 price also fully bypasses the payment gate below (see _is_free_tier).
+SERVICE_PRICE = os.getenv("SERVICE_PRICE", "0")
+X402_ASSET_DECIMALS = int(os.getenv("X402_ASSET_DECIMALS", "18"))
+X402_TOKEN_NAME = os.getenv("X402_TOKEN_NAME", "SigilX Test USD")
+X402_TOKEN_VERSION = os.getenv("X402_TOKEN_VERSION", "1")
+
+X402_VERSION = 2
 X402_NETWORK = os.getenv("X402_NETWORK", "eip155:1952")  # X Layer testnet
 X402_ASSET = os.getenv("X402_ASSET", "")  # PaymentToken address (contracts/src/PaymentToken.sol)
 X402_MAX_TIMEOUT_SECONDS = 300
@@ -63,6 +71,9 @@ async def x402_middleware(request: Request, call_next: Callable) -> Response:
       4. Reject with 402 if payment is missing or invalid.
     """
     if request.url.path == "/generate" and request.method == "POST":
+        if _is_free_tier():
+            return await call_next(request)
+
         if DEMO_MODE and DEMO_API_KEY:
             demo_key = request.headers.get("X-Demo-Key", "")
             if demo_key == DEMO_API_KEY:
@@ -79,6 +90,7 @@ async def x402_middleware(request: Request, call_next: Callable) -> Response:
                 content={
                     "x402Version": X402_VERSION,
                     "error": reason,
+                    "resource": _resource(request),
                     "accepts": [_payment_requirements(request)],
                 },
             )
@@ -90,6 +102,7 @@ async def x402_middleware(request: Request, call_next: Callable) -> Response:
                 content={
                     "x402Version": X402_VERSION,
                     "error": "settlement_failed",
+                    "resource": _resource(request),
                     "accepts": [_payment_requirements(request)],
                 },
             )
@@ -196,28 +209,44 @@ def _payment_required_response(request: Request) -> JSONResponse:
         content={
             "x402Version": X402_VERSION,
             "error": "payment_required",
+            "resource": _resource(request),
             "accepts": [_payment_requirements(request)],
         },
     )
+
+
+def _resource(request: Request) -> dict[str, Any]:
+    return {
+        "url": str(request.url),
+        "description": "SigilX Chain Portrait generation",
+        "mimeType": "application/json",
+    }
 
 
 def _payment_requirements(request: Request) -> dict[str, Any]:
     return {
         "scheme": "exact",
         "network": X402_NETWORK,
-        "maxAmountRequired": str(_required_atomic_amount() or 0),
-        "resource": str(request.url),
-        "description": "SigilX Chain Portrait generation",
-        "mimeType": "application/json",
+        "asset": X402_ASSET,
+        "amount": str(_required_atomic_amount() or 0),
         "payTo": PAYMENT_WALLET,
         "maxTimeoutSeconds": X402_MAX_TIMEOUT_SECONDS,
-        "asset": X402_ASSET,
+        "extra": {"name": X402_TOKEN_NAME, "version": X402_TOKEN_VERSION},
     }
 
 
 def _required_atomic_amount() -> int | None:
-    """Service price in whole OKB converted to wei (18 decimals)."""
+    """Service price (in SERVICE_PRICE's human units) converted to atomic units
+    of X402_ASSET_DECIMALS decimals. Returns None (not 0) only on a genuinely
+    unparseable price, since 0 is a valid, meaningful "free tier" value."""
     try:
-        return int(float(SERVICE_PRICE_OKB) * 10**18)
+        return int(float(SERVICE_PRICE) * 10**X402_ASSET_DECIMALS)
     except (TypeError, ValueError):
         return None
+
+
+def _is_free_tier() -> bool:
+    """True when the service is listed at price 0 (e.g. during OKX marketplace
+    review) — the entire x402 gate is bypassed rather than requiring payers to
+    construct a zero-value signed authorization for no reason."""
+    return _required_atomic_amount() == 0
