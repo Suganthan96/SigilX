@@ -3,13 +3,19 @@ require("@nomicfoundation/hardhat-verify");
 require("hardhat-contract-sizer");
 require("dotenv").config({ path: "../.env" });
 
-// Only treat XLAYER_PRIVATE_KEY as usable if it's a well-formed 32-byte hex key —
+// Only treat a key as usable if it's a well-formed 32-byte hex string —
 // otherwise placeholder values (e.g. from .env.example) would break `compile`/`test`,
 // which don't need a real account at all.
-const _rawKey = process.env.XLAYER_PRIVATE_KEY || "";
-const DEPLOYER_PRIVATE_KEY = /^(0x)?[0-9a-fA-F]{64}$/.test(_rawKey)
-  ? (_rawKey.startsWith("0x") ? _rawKey : `0x${_rawKey}`)
-  : "";
+const _normalizeKey = (raw) =>
+  /^(0x)?[0-9a-fA-F]{64}$/.test(raw || "") ? (raw.startsWith("0x") ? raw : `0x${raw}`) : "";
+
+// Testnet keeps using the shared XLAYER_PRIVATE_KEY (also the ongoing minter/
+// facilitator relayer key). Mainnet deploys use a dedicated key so a fresh
+// deploy-only wallet never needs to touch the testnet-facing key.
+const TESTNET_DEPLOYER_PRIVATE_KEY = _normalizeKey(process.env.XLAYER_PRIVATE_KEY);
+const MAINNET_DEPLOYER_PRIVATE_KEY = _normalizeKey(
+  process.env.XLAYER_PRIVATE_KEY_MAINNET || process.env.XLAYER_PRIVATE_KEY
+);
 const XLAYER_TESTNET_RPC   = process.env.XLAYER_RPC_TESTNET || "https://testrpc.xlayer.tech/terigon";
 const XLAYER_MAINNET_RPC   = process.env.XLAYER_RPC_MAINNET || "https://rpc.xlayer.tech";
 
@@ -51,7 +57,7 @@ module.exports = {
     "xlayer-testnet": {
       url: XLAYER_TESTNET_RPC,
       chainId: 1952,
-      accounts: DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [],
+      accounts: TESTNET_DEPLOYER_PRIVATE_KEY ? [TESTNET_DEPLOYER_PRIVATE_KEY] : [],
       gasPrice: "auto",
       gas: "auto",
     },
@@ -60,7 +66,7 @@ module.exports = {
     "xlayer-mainnet": {
       url: XLAYER_MAINNET_RPC,
       chainId: 196,
-      accounts: DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [],
+      accounts: MAINNET_DEPLOYER_PRIVATE_KEY ? [MAINNET_DEPLOYER_PRIVATE_KEY] : [],
       gasPrice: "auto",
       gas: "auto",
     },
