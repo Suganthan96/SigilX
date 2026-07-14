@@ -147,5 +147,6 @@ async def generate_chain_portrait(
 
 if __name__ == "__main__":
     port = int(os.getenv("MCP_PORT", "8001"))
-    print(f"SigilX MCP server starting on port {port}")
-    mcp.run(transport="sse", port=port)
+    host = os.getenv("SERVICE_HOST", "0.0.0.0")
+    print(f"SigilX MCP server starting on {host}:{port}")
+    mcp.run(transport="sse", host=host, port=port)
