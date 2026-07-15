@@ -12,25 +12,25 @@ const _geist = Geist({subsets: ["latin"]});
 const _geistMono = Geist_Mono({subsets: ["latin"]});
 
 export const metadata: Metadata = {
-    title: 'SigilX — Chain Portrait',
+    title: 'SigilX — Wrap your Wallet',
     description: 'Turn any wallet\'s on-chain history into a unique, deterministic work of art. Same wallet, same art, every time — powered by OKX Market API and X Layer.',
     generator: 'v0.app',
     icons: {
         icon: [
             {
-                url: '/icon-light-32x32.png',
+                url: '/SigilX.png',
                 media: '(prefers-color-scheme: light)',
             },
             {
-                url: '/icon-dark-32x32.png',
+                url: '/SigilX.png',
                 media: '(prefers-color-scheme: dark)',
             },
             {
-                url: '/icon.svg',
+                url: '/SigilX.png',
                 type: 'image/svg+xml',
             },
         ],
-        apple: '/apple-icon.png',
+        apple: '/SigilX.png',
     },
 }
 
