@@ -29,11 +29,13 @@ except ImportError:
     print("FastMCP not installed. Run: pip install fastmcp")
     sys.exit(1)
 
+from starlette.middleware import Middleware
 from web3 import Web3
 
 from ..extractor.okx_client import OKXClient, SUPPORTED_CHAINS
 from ..extractor.fingerprint import build_fingerprint, MINIMUM_TX_COUNT
 from ..renderer.composer import render_portrait
+from .mcp_payment import McpPaymentMiddleware
 
 
 def _keccak_hex(svg: str) -> str:
@@ -149,4 +151,9 @@ if __name__ == "__main__":
     port = int(os.getenv("MCP_PORT", "8001"))
     host = os.getenv("SERVICE_HOST", "0.0.0.0")
     print(f"SigilX MCP server starting on {host}:{port}")
-    mcp.run(transport="sse", host=host, port=port)
+    mcp.run(
+        transport="sse",
+        host=host,
+        port=port,
+        middleware=[Middleware(McpPaymentMiddleware)],
+    )
